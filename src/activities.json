@@ -1,0 +1,26 @@
+{
+  "Chess Club": {
+    "description": "A club for chess enthusiasts of all skill levels.",
+    "participants": []
+  },
+  "Programming Class": {
+    "description": "Learn Python, JavaScript, and more!",
+    "participants": []
+  },
+  "Gym Class": {
+    "description": "Physical education and sports activities",
+    "participants": []
+  },
+  "Art Club": {
+    "description": "Explore your creativity with painting, drawing, and sculpture.",
+    "participants": []
+  },
+  "Drama Club": {
+    "description": "Act, direct, and produce plays and skits.",
+    "participants": []
+  },
+  "Math Club": {
+    "description": "Challenge yourself with math puzzles and competitions.",
+    "participants": []
+  }
+}
