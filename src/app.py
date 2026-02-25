@@ -8,8 +8,10 @@ for extracurricular activities at Mergington High School.
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 import os
 from pathlib import Path
+from datetime import datetime
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -78,6 +80,19 @@ activities = {
 }
 
 
+# In-memory storage for complaints and feedback
+complaints: dict[str, list] = {}
+feedback: dict[str, list] = {}
+
+
+class ComplaintRequest(BaseModel):
+    message: str
+
+
+class FeedbackRequest(BaseModel):
+    message: str
+
+
 @app.get("/")
 def root():
     return RedirectResponse(url="/static/index.html")
@@ -130,3 +145,39 @@ def unregister_from_activity(activity_name: str, email: str):
     # Remove student
     activity["participants"].remove(email)
     return {"message": f"Unregistered {email} from {activity_name}"}
+
+
+@app.get("/students/{email}/dashboard")
+def get_student_dashboard(email: str):
+    """Get a student's dashboard with their signups, complaints, and feedback"""
+    signed_up = [
+        {"activity": name, "schedule": details["schedule"]}
+        for name, details in activities.items()
+        if email in details["participants"]
+    ]
+    return {
+        "email": email,
+        "signups": signed_up,
+        "complaints": complaints.get(email, []),
+        "feedback": feedback.get(email, []),
+    }
+
+
+@app.post("/students/{email}/complaints")
+def submit_complaint(email: str, body: ComplaintRequest):
+    """Submit a complaint for a student"""
+    if email not in complaints:
+        complaints[email] = []
+    entry = {"message": body.message, "submitted_at": datetime.utcnow().isoformat()}
+    complaints[email].append(entry)
+    return {"message": "Complaint submitted successfully", "complaint": entry}
+
+
+@app.post("/students/{email}/feedback")
+def submit_feedback(email: str, body: FeedbackRequest):
+    """Submit feedback for a student"""
+    if email not in feedback:
+        feedback[email] = []
+    entry = {"message": body.message, "submitted_at": datetime.utcnow().isoformat()}
+    feedback[email].append(entry)
+    return {"message": "Feedback submitted successfully", "feedback": entry}

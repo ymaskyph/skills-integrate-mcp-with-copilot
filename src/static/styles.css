@@ -192,6 +192,53 @@ button:hover {
   display: none;
 }
 
+/* Dashboard styles */
+#dashboard-container {
+  max-width: 600px;
+}
+
+.dashboard-section {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #ddd;
+}
+
+.dashboard-section h4 {
+  color: #1a237e;
+  margin-bottom: 10px;
+}
+
+.dashboard-section h5 {
+  color: #444;
+  margin: 10px 0 6px;
+  font-size: 14px;
+}
+
+.dashboard-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.dashboard-section ul li {
+  padding: 5px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.dashboard-section textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.timestamp {
+  color: #888;
+  font-size: 12px;
+}
+
 footer {
   text-align: center;
   margin-top: 30px;
