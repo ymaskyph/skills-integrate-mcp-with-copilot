@@ -39,6 +39,74 @@
         </form>
         <div id="message" class="hidden"></div>
       </section>
+
+      <section id="feedback-container">
+        <h3>Submit Feedback or Complaint</h3>
+        <form id="feedback-form">
+          <div class="form-group">
+            <label for="feedback-email">Your Email:</label>
+            <input type="email" id="feedback-email" required placeholder="your-email@mergington.edu" />
+          </div>
+          <div class="form-group">
+            <label for="feedback-activity">Activity:</label>
+            <select id="feedback-activity" required>
+              <option value="">-- Select an activity --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="feedback-type">Type:</label>
+            <select id="feedback-type" required>
+              <option value="feedback">Feedback</option>
+              <option value="complaint">Complaint</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="feedback-message">Message:</label>
+            <textarea id="feedback-message" required rows="3" placeholder="Enter your feedback or complaint..."></textarea>
+          </div>
+          <button type="submit">Submit</button>
+        </form>
+        <div id="feedback-message-status" class="hidden"></div>
+      </section>
+
+      <section id="dashboard-container">
+        <h3>User Dashboard</h3>
+        <form id="dashboard-form">
+          <div class="form-group">
+            <label for="dashboard-email">Email:</label>
+            <input type="email" id="dashboard-email" required placeholder="your-email@mergington.edu" />
+          </div>
+          <button type="submit">View Dashboard</button>
+        </form>
+        <div id="dashboard-content" class="hidden"></div>
+      </section>
+
+      <section id="supervisor-container">
+        <h3>Supervisor: Assign Activity Manager</h3>
+        <form id="assignment-form">
+          <div class="form-group">
+            <label for="supervisor-email">Supervisor Email:</label>
+            <input type="email" id="supervisor-email" required placeholder="supervisor@mergington.edu" />
+          </div>
+          <div class="form-group">
+            <label for="assign-activity">Activity:</label>
+            <select id="assign-activity" required>
+              <option value="">-- Select an activity --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="assign-to">Assign To (Teacher/Admin Email):</label>
+            <input type="email" id="assign-to" required placeholder="teacher@mergington.edu" />
+          </div>
+          <button type="submit">Assign</button>
+        </form>
+        <div id="assignment-message" class="hidden"></div>
+        <div id="assignments-list" class="hidden">
+          <h4>Current Assignments</h4>
+          <div id="assignments-content"></div>
+        </div>
+        <button id="load-assignments-btn" style="margin-top:10px;">View All Assignments</button>
+      </section>
     </main>
 
     <footer>

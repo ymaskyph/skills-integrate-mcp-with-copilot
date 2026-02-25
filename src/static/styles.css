@@ -198,3 +198,55 @@ footer {
   padding: 20px;
   color: #666;
 }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: capitalize;
+  margin-right: 6px;
+}
+
+.badge-feedback {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.badge-complaint {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+#dashboard-content h5,
+#supervisor-container h4 {
+  margin: 12px 0 6px;
+  color: #1a237e;
+}
+
+#dashboard-content ul,
+#assignments-list ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+#dashboard-content ul li,
+#assignments-list ul li {
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 15px;
+  resize: vertical;
+}
+

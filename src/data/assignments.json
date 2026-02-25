@@ -1,0 +1,12 @@
+{
+  "Chess Club": {
+    "assigned_to": "teacher.smith@mergington.edu",
+    "assigned_by": "supervisor@mergington.edu",
+    "assigned_at": "2025-01-15T09:00:00"
+  },
+  "Programming Class": {
+    "assigned_to": "teacher.jones@mergington.edu",
+    "assigned_by": "supervisor@mergington.edu",
+    "assigned_at": "2025-01-15T09:00:00"
+  }
+}

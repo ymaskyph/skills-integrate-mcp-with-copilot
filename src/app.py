@@ -8,7 +8,10 @@ for extracurricular activities at Mergington High School.
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
+import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 app = FastAPI(title="Mergington High School API",
@@ -18,6 +21,36 @@ app = FastAPI(title="Mergington High School API",
 current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
+
+# JSON data file paths
+DATA_DIR = current_dir / "data"
+ASSIGNMENTS_FILE = DATA_DIR / "assignments.json"
+FEEDBACK_FILE = DATA_DIR / "feedback.json"
+
+
+def load_json(path: Path) -> dict:
+    if path.exists():
+        with open(path, "r") as f:
+            return json.load(f)
+    return {}
+
+
+def save_json(path: Path, data: dict):
+    DATA_DIR.mkdir(exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+class AssignmentRequest(BaseModel):
+    activity_name: str
+    assigned_to: str
+    assigned_by: str
+
+
+class FeedbackRequest(BaseModel):
+    email: str
+    feedback_type: str  # "complaint" or "feedback"
+    message: str
 
 # In-memory activity database
 activities = {
@@ -130,3 +163,95 @@ def unregister_from_activity(activity_name: str, email: str):
     # Remove student
     activity["participants"].remove(email)
     return {"message": f"Unregistered {email} from {activity_name}"}
+
+
+# --- Assignments ---
+
+@app.get("/assignments")
+def get_assignments():
+    """Get all activity-to-teacher/admin assignments"""
+    return load_json(ASSIGNMENTS_FILE)
+
+
+@app.post("/assignments")
+def assign_activity(request: AssignmentRequest):
+    """Supervisor assigns a teacher/admin to manage an activity"""
+    if request.activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    assignments = load_json(ASSIGNMENTS_FILE)
+    assignments[request.activity_name] = {
+        "assigned_to": request.assigned_to,
+        "assigned_by": request.assigned_by,
+        "assigned_at": datetime.utcnow().isoformat()
+    }
+    save_json(ASSIGNMENTS_FILE, assignments)
+    return {"message": f"Assigned {request.assigned_to} to manage {request.activity_name}"}
+
+
+@app.delete("/assignments/{activity_name}")
+def remove_assignment(activity_name: str):
+    """Remove a teacher/admin assignment from an activity"""
+    assignments = load_json(ASSIGNMENTS_FILE)
+    if activity_name not in assignments:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    del assignments[activity_name]
+    save_json(ASSIGNMENTS_FILE, assignments)
+    return {"message": f"Removed assignment for {activity_name}"}
+
+
+# --- Feedback / Complaints ---
+
+@app.post("/activities/{activity_name}/feedback")
+def submit_feedback(activity_name: str, request: FeedbackRequest):
+    """Submit feedback or a complaint for an activity"""
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    if request.feedback_type not in ("complaint", "feedback"):
+        raise HTTPException(status_code=400, detail="feedback_type must be 'complaint' or 'feedback'")
+
+    all_feedback = load_json(FEEDBACK_FILE)
+    user_entries = all_feedback.get(request.email, [])
+    user_entries.append({
+        "activity": activity_name,
+        "type": request.feedback_type,
+        "message": request.message,
+        "submitted_at": datetime.utcnow().isoformat(),
+        "status": "open"
+    })
+    all_feedback[request.email] = user_entries
+    save_json(FEEDBACK_FILE, all_feedback)
+    return {"message": f"Submitted {request.feedback_type} for {activity_name}"}
+
+
+# --- User Dashboard ---
+
+@app.get("/dashboard/{email}")
+def get_dashboard(email: str):
+    """Get a user dashboard with their signups, complaints, and feedback"""
+    # Signups: find all activities the user is enrolled in
+    signups = [
+        {"activity": name, "schedule": details["schedule"]}
+        for name, details in activities.items()
+        if email in details["participants"]
+    ]
+
+    # Feedback / complaints submitted by this user
+    all_feedback = load_json(FEEDBACK_FILE)
+    user_feedback = all_feedback.get(email, [])
+
+    # Assignments managed by this user (as a teacher/admin)
+    assignments = load_json(ASSIGNMENTS_FILE)
+    managed = [
+        {"activity": name, "assigned_by": info["assigned_by"], "assigned_at": info["assigned_at"]}
+        for name, info in assignments.items()
+        if info.get("assigned_to") == email
+    ]
+
+    return {
+        "email": email,
+        "signups": signups,
+        "feedback": user_feedback,
+        "managed_activities": managed
+    }
