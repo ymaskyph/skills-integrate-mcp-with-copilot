@@ -198,3 +198,38 @@ footer {
   padding: 20px;
   color: #666;
 }
+
+.complaint-card {
+  margin-bottom: 15px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.complaint-card p {
+  margin-bottom: 6px;
+}
+
+.status-pending {
+  color: #e65100;
+  font-weight: bold;
+}
+
+.status-responded {
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+#history-list {
+  margin-top: 15px;
+}
+
+#complaint-container textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  resize: vertical;
+}

@@ -8,7 +8,11 @@ for extracurricular activities at Mergington High School.
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 import os
+import json
+import uuid
+from datetime import datetime
 from pathlib import Path
 
 app = FastAPI(title="Mergington High School API",
@@ -18,6 +22,31 @@ app = FastAPI(title="Mergington High School API",
 current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
+
+# JSON file path for complaints
+COMPLAINTS_FILE = os.path.join(current_dir, "complaints.json")
+
+
+def load_complaints() -> list:
+    if os.path.exists(COMPLAINTS_FILE):
+        with open(COMPLAINTS_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+
+def save_complaints(complaints: list):
+    with open(COMPLAINTS_FILE, "w") as f:
+        json.dump(complaints, f, indent=2)
+
+
+class ComplaintRequest(BaseModel):
+    email: str
+    activity: str
+    complaint: str
+
+
+class ResponseRequest(BaseModel):
+    admin_response: str
 
 # In-memory activity database
 activities = {
@@ -130,3 +159,50 @@ def unregister_from_activity(activity_name: str, email: str):
     # Remove student
     activity["participants"].remove(email)
     return {"message": f"Unregistered {email} from {activity_name}"}
+
+
+@app.post("/complaints")
+def submit_complaint(request: ComplaintRequest):
+    """Submit a complaint about an activity"""
+    if request.activity not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    complaints = load_complaints()
+    complaint = {
+        "id": str(uuid.uuid4()),
+        "email": request.email,
+        "activity": request.activity,
+        "complaint": request.complaint,
+        "created_at": datetime.utcnow().isoformat(),
+        "status": "pending",
+        "admin_response": None
+    }
+    complaints.append(complaint)
+    save_complaints(complaints)
+    return {"message": "Complaint submitted successfully", "id": complaint["id"]}
+
+
+@app.get("/complaints")
+def get_all_complaints():
+    """Get all complaints (admin view)"""
+    return load_complaints()
+
+
+@app.post("/complaints/{complaint_id}/respond")
+def respond_to_complaint(complaint_id: str, request: ResponseRequest):
+    """Respond to a complaint (admin only)"""
+    complaints = load_complaints()
+    for complaint in complaints:
+        if complaint["id"] == complaint_id:
+            complaint["admin_response"] = request.admin_response
+            complaint["status"] = "responded"
+            save_complaints(complaints)
+            return {"message": "Response submitted successfully"}
+    raise HTTPException(status_code=404, detail="Complaint not found")
+
+
+@app.get("/complaints/user/{email}")
+def get_user_complaints(email: str):
+    """Get all complaints submitted by a specific user"""
+    complaints = load_complaints()
+    return [c for c in complaints if c["email"] == email]
