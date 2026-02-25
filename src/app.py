@@ -58,6 +58,17 @@ def load_teachers():
         return json.load(f)
 
 
+from pydantic import BaseModel
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class Activity(BaseModel):
+    description: str
+    participants: list[str] = []
+
+
 def get_current_teacher(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Dependency that requires a valid teacher/admin token."""
     if not credentials:
@@ -74,18 +85,19 @@ def root():
 
 
 @app.post("/login")
-def login(username: str, password: str):
+def login(credentials: LoginRequest):
     """Authenticate a teacher/admin and return a session token."""
     teachers = load_teachers()
-    if username not in teachers or teachers[username]["password"] != password:
+    if credentials.username not in teachers or teachers[credentials.username]["password"] != credentials.password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = secrets.token_hex(32)
+    user = teachers[credentials.username]
     active_tokens[token] = {
-        "username": username,
-        "role": teachers[username]["role"],
-        "name": teachers[username]["name"],
+        "username": credentials.username,
+        "role": user["role"],
+        "name": user["name"],
     }
-    return {"token": token, "role": teachers[username]["role"], "name": teachers[username]["name"]}
+    return {"token": token, "role": user["role"], "name": user["name"]}
 
 
 @app.post("/logout")
@@ -132,14 +144,8 @@ def unregister_from_activity(activity_name: str, email: str, current_user: dict 
     return {"message": f"Unregistered {email} from {activity_name}"}
 # Add CRUD endpoints for activities
 
-from pydantic import BaseModel
-
-class Activity(BaseModel):
-    description: str
-    participants: list[str] = []
-
 @app.post("/activities")
-def create_activity(activity_name: str, activity: Activity):
+def create_activity(activity_name: str, activity: Activity, current_user: dict = Depends(get_current_teacher)):
     activities = get_activities_data()
     if activity_name in activities:
         raise HTTPException(status_code=400, detail="Activity already exists")
@@ -148,7 +154,7 @@ def create_activity(activity_name: str, activity: Activity):
     return {"message": f"Created activity {activity_name}"}
 
 @app.put("/activities/{activity_name}")
-def update_activity(activity_name: str, activity: Activity):
+def update_activity(activity_name: str, activity: Activity, current_user: dict = Depends(get_current_teacher)):
     activities = get_activities_data()
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -159,7 +165,7 @@ def update_activity(activity_name: str, activity: Activity):
     return {"message": f"Updated activity {activity_name}"}
 
 @app.delete("/activities/{activity_name}")
-def delete_activity(activity_name: str):
+def delete_activity(activity_name: str, current_user: dict = Depends(get_current_teacher)):
     activities = get_activities_data()
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")

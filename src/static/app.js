@@ -50,10 +50,11 @@ document.addEventListener("DOMContentLoaded", () => {
     loginError.classList.add("hidden");
 
     try {
-      const response = await fetch(
-        `/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-        { method: "POST" }
-      );
+      const response = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
       const result = await response.json();
 
       if (response.ok) {
