@@ -5,10 +5,12 @@ A super simple FastAPI application that allows students to view and sign up
 for extracurricular activities at Mergington High School.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
+import secrets
 from pathlib import Path
 
 app = FastAPI(title="Mergington High School API",
@@ -24,6 +26,13 @@ app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
 import json
 
 ACTIVITIES_FILE = os.path.join(current_dir, "activities.json")
+TEACHERS_FILE = os.path.join(current_dir, "teachers.json")
+
+# In-memory token store: token -> user info
+active_tokens: dict = {}
+
+security = HTTPBearer(auto_error=False)
+
 
 def load_activities():
     if not os.path.exists(ACTIVITIES_FILE):
@@ -42,9 +51,61 @@ def set_activities_data(activities):
     save_activities(activities)
 
 
+def load_teachers():
+    if not os.path.exists(TEACHERS_FILE):
+        return {}
+    with open(TEACHERS_FILE, "r") as f:
+        return json.load(f)
+
+
+from pydantic import BaseModel
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class Activity(BaseModel):
+    description: str
+    participants: list[str] = []
+
+
+def get_current_teacher(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Dependency that requires a valid teacher/admin token."""
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    token = credentials.credentials
+    if token not in active_tokens:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return active_tokens[token]
+
+
 @app.get("/")
 def root():
     return RedirectResponse(url="/static/index.html")
+
+
+@app.post("/login")
+def login(credentials: LoginRequest):
+    """Authenticate a teacher/admin and return a session token."""
+    teachers = load_teachers()
+    if credentials.username not in teachers or teachers[credentials.username]["password"] != credentials.password:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = secrets.token_hex(32)
+    user = teachers[credentials.username]
+    active_tokens[token] = {
+        "username": credentials.username,
+        "role": user["role"],
+        "name": user["name"],
+    }
+    return {"token": token, "role": user["role"], "name": user["name"]}
+
+
+@app.post("/logout")
+def logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Invalidate the current session token."""
+    if credentials and credentials.credentials in active_tokens:
+        del active_tokens[credentials.credentials]
+    return {"message": "Logged out successfully"}
 
 
 
@@ -55,7 +116,7 @@ def get_activities():
 
 
 @app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str):
+def signup_for_activity(activity_name: str, email: str, current_user: dict = Depends(get_current_teacher)):
     """Sign up a student for an activity"""
     activities = get_activities_data()
     if activity_name not in activities:
@@ -70,7 +131,7 @@ def signup_for_activity(activity_name: str, email: str):
 
 
 @app.delete("/activities/{activity_name}/unregister")
-def unregister_from_activity(activity_name: str, email: str):
+def unregister_from_activity(activity_name: str, email: str, current_user: dict = Depends(get_current_teacher)):
     """Unregister a student from an activity"""
     activities = get_activities_data()
     if activity_name not in activities:
@@ -83,14 +144,8 @@ def unregister_from_activity(activity_name: str, email: str):
     return {"message": f"Unregistered {email} from {activity_name}"}
 # Add CRUD endpoints for activities
 
-from pydantic import BaseModel
-
-class Activity(BaseModel):
-    description: str
-    participants: list[str] = []
-
 @app.post("/activities")
-def create_activity(activity_name: str, activity: Activity):
+def create_activity(activity_name: str, activity: Activity, current_user: dict = Depends(get_current_teacher)):
     activities = get_activities_data()
     if activity_name in activities:
         raise HTTPException(status_code=400, detail="Activity already exists")
@@ -99,7 +154,7 @@ def create_activity(activity_name: str, activity: Activity):
     return {"message": f"Created activity {activity_name}"}
 
 @app.put("/activities/{activity_name}")
-def update_activity(activity_name: str, activity: Activity):
+def update_activity(activity_name: str, activity: Activity, current_user: dict = Depends(get_current_teacher)):
     activities = get_activities_data()
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -110,7 +165,7 @@ def update_activity(activity_name: str, activity: Activity):
     return {"message": f"Updated activity {activity_name}"}
 
 @app.delete("/activities/{activity_name}")
-def delete_activity(activity_name: str):
+def delete_activity(activity_name: str, current_user: dict = Depends(get_current_teacher)):
     activities = get_activities_data()
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")

@@ -1,7 +1,9 @@
 {
   "Chess Club": {
     "description": "A club for chess enthusiasts of all skill levels.",
-    "participants": []
+    "participants": [
+      "student@mergington.edu"
+    ]
   },
   "Programming Class": {
     "description": "Learn Python, JavaScript, and more!",
