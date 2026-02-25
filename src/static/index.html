@@ -39,6 +39,46 @@
         </form>
         <div id="message" class="hidden"></div>
       </section>
+
+      <section id="complaint-container">
+        <h3>Submit a Complaint</h3>
+        <form id="complaint-form">
+          <div class="form-group">
+            <label for="complaint-email">Your Email:</label>
+            <input type="email" id="complaint-email" required placeholder="your-email@mergington.edu" />
+          </div>
+          <div class="form-group">
+            <label for="complaint-activity">Activity:</label>
+            <select id="complaint-activity" required>
+              <option value="">-- Select an activity --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="complaint-description">Description:</label>
+            <textarea id="complaint-description" required placeholder="Describe your complaint..." rows="4"></textarea>
+          </div>
+          <button type="submit">Submit Complaint</button>
+        </form>
+        <div id="complaint-message" class="hidden"></div>
+      </section>
+
+      <section id="history-container">
+        <h3>My Complaint History</h3>
+        <form id="history-form">
+          <div class="form-group">
+            <label for="history-email">Your Email:</label>
+            <input type="email" id="history-email" required placeholder="your-email@mergington.edu" />
+          </div>
+          <button type="submit">View History</button>
+        </form>
+        <div id="complaint-history-list"></div>
+      </section>
+
+      <section id="admin-container">
+        <h3>Admin: Manage Complaints</h3>
+        <button id="load-all-complaints">Load All Complaints</button>
+        <div id="all-complaints-list"></div>
+      </section>
     </main>
 
     <footer>

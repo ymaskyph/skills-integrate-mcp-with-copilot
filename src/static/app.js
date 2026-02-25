@@ -54,6 +54,12 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+
+        // Also populate complaint activity dropdown
+        const complaintOption = document.createElement("option");
+        complaintOption.value = name;
+        complaintOption.textContent = name;
+        document.getElementById("complaint-activity").appendChild(complaintOption);
       });
 
       // Add event listeners to delete buttons
@@ -157,4 +163,135 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize app
   fetchActivities();
+
+  // Handle complaint form submission
+  const complaintForm = document.getElementById("complaint-form");
+  const complaintMessageDiv = document.getElementById("complaint-message");
+
+  complaintForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = document.getElementById("complaint-email").value;
+    const activityName = document.getElementById("complaint-activity").value;
+    const description = document.getElementById("complaint-description").value;
+
+    try {
+      const response = await fetch("/complaints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, activity_name: activityName, description }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        complaintMessageDiv.textContent = result.message;
+        complaintMessageDiv.className = "success";
+        complaintForm.reset();
+      } else {
+        complaintMessageDiv.textContent = result.detail || "An error occurred";
+        complaintMessageDiv.className = "error";
+      }
+      complaintMessageDiv.classList.remove("hidden");
+      setTimeout(() => complaintMessageDiv.classList.add("hidden"), 5000);
+    } catch (error) {
+      complaintMessageDiv.textContent = "Failed to submit complaint. Please try again.";
+      complaintMessageDiv.className = "error";
+      complaintMessageDiv.classList.remove("hidden");
+      console.error("Error submitting complaint:", error);
+    }
+  });
+
+  // Handle complaint history lookup
+  const historyForm = document.getElementById("history-form");
+  const complaintHistoryList = document.getElementById("complaint-history-list");
+
+  historyForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = document.getElementById("history-email").value;
+
+    try {
+      const response = await fetch(`/complaints/by-email/${encodeURIComponent(email)}`);
+      const complaints = await response.json();
+      complaintHistoryList.innerHTML = "";
+      const entries = Object.values(complaints);
+      if (entries.length === 0) {
+        complaintHistoryList.innerHTML = "<p><em>No complaints found.</em></p>";
+        return;
+      }
+      entries.forEach((c) => {
+        const card = document.createElement("div");
+        card.className = "complaint-card";
+        card.innerHTML = `
+          <p><strong>Activity:</strong> ${c.activity_name}</p>
+          <p><strong>Description:</strong> ${c.description}</p>
+          <p><strong>Status:</strong> <span class="complaint-status ${c.status}">${c.status}</span></p>
+          <p><strong>Submitted:</strong> ${new Date(c.submitted_at).toLocaleString()}</p>
+          ${c.admin_response ? `<p><strong>Admin Response:</strong> ${c.admin_response}</p>` : ""}
+        `;
+        complaintHistoryList.appendChild(card);
+      });
+    } catch (error) {
+      complaintHistoryList.innerHTML = "<p>Failed to load complaints.</p>";
+      console.error("Error loading complaint history:", error);
+    }
+  });
+
+  // Handle admin complaints management
+  const loadAllComplaintsBtn = document.getElementById("load-all-complaints");
+  const allComplaintsList = document.getElementById("all-complaints-list");
+
+  loadAllComplaintsBtn.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/complaints");
+      const complaints = await response.json();
+      allComplaintsList.innerHTML = "";
+      const entries = Object.values(complaints);
+      if (entries.length === 0) {
+        allComplaintsList.innerHTML = "<p><em>No complaints found.</em></p>";
+        return;
+      }
+      entries.forEach((c) => {
+        const card = document.createElement("div");
+        card.className = "complaint-card";
+        card.innerHTML = `
+          <p><strong>From:</strong> ${c.email}</p>
+          <p><strong>Activity:</strong> ${c.activity_name}</p>
+          <p><strong>Description:</strong> ${c.description}</p>
+          <p><strong>Status:</strong> <span class="complaint-status ${c.status}">${c.status}</span></p>
+          <p><strong>Submitted:</strong> ${new Date(c.submitted_at).toLocaleString()}</p>
+          ${c.admin_response ? `<p><strong>Your Response:</strong> ${c.admin_response}</p>` : `
+            <div class="form-group">
+              <textarea class="admin-response-text" placeholder="Enter your response..." rows="2"></textarea>
+            </div>
+            <button class="respond-btn" data-id="${c.id}">Submit Response</button>
+          `}
+        `;
+        allComplaintsList.appendChild(card);
+      });
+
+      // Attach respond button listeners
+      allComplaintsList.querySelectorAll(".respond-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const complaintId = btn.getAttribute("data-id");
+          const textarea = btn.previousElementSibling.querySelector("textarea");
+          const responseText = textarea.value.trim();
+          if (!responseText) return;
+
+          try {
+            const res = await fetch(`/complaints/${encodeURIComponent(complaintId)}/respond`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ response: responseText }),
+            });
+            if (res.ok) {
+              loadAllComplaintsBtn.click();
+            }
+          } catch (err) {
+            console.error("Error submitting response:", err);
+          }
+        });
+      });
+    } catch (error) {
+      allComplaintsList.innerHTML = "<p>Failed to load complaints.</p>";
+      console.error("Error loading all complaints:", error);
+    }
+  });
 });
