@@ -39,6 +39,52 @@
         </form>
         <div id="message" class="hidden"></div>
       </section>
+
+      <section id="admin-container">
+        <h3>Admin: Manage Activities</h3>
+        <button id="show-add-activity-btn">+ Add New Activity</button>
+
+        <form id="add-activity-form" class="hidden admin-form">
+          <h4 id="activity-form-title">Add New Activity</h4>
+          <input type="hidden" id="edit-activity-name" />
+          <div class="form-group">
+            <label for="new-activity-name">Activity Name:</label>
+            <input type="text" id="new-activity-name" required placeholder="Activity name" />
+          </div>
+          <div class="form-group">
+            <label for="new-activity-description">Description:</label>
+            <input type="text" id="new-activity-description" required placeholder="Description" />
+          </div>
+          <div class="form-group">
+            <label for="new-activity-schedule">Schedule:</label>
+            <input type="text" id="new-activity-schedule" required placeholder="e.g. Mondays, 3:30 PM - 5:00 PM" />
+          </div>
+          <div class="form-group">
+            <label for="new-activity-max">Max Participants:</label>
+            <input type="number" id="new-activity-max" required min="1" placeholder="e.g. 20" />
+          </div>
+          <div class="form-actions">
+            <button type="submit" id="activity-form-submit">Add Activity</button>
+            <button type="button" id="cancel-activity-btn" class="btn-secondary">Cancel</button>
+          </div>
+        </form>
+
+        <form id="assign-admin-form" class="admin-form">
+          <h4>Assign Admin to Activity</h4>
+          <div class="form-group">
+            <label for="admin-email">Admin Email:</label>
+            <input type="email" id="admin-email" required placeholder="admin@mergington.edu" />
+          </div>
+          <div class="form-group">
+            <label for="admin-activity">Select Activity:</label>
+            <select id="admin-activity" required>
+              <option value="">-- Select an activity --</option>
+            </select>
+          </div>
+          <button type="submit">Assign Admin</button>
+        </form>
+        <div id="admin-message" class="hidden"></div>
+      </section>
     </main>
 
     <footer>
