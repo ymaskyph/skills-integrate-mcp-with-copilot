@@ -8,8 +8,11 @@ for extracurricular activities at Mergington High School.
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 import os
 from pathlib import Path
+from datetime import datetime
+import uuid
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -77,6 +80,19 @@ activities = {
     }
 }
 
+# In-memory complaints database
+complaints = {}
+
+
+class ComplaintSubmission(BaseModel):
+    email: str
+    activity_name: str
+    message: str
+
+
+class AdminResponse(BaseModel):
+    response: str
+
 
 @app.get("/")
 def root():
@@ -130,3 +146,56 @@ def unregister_from_activity(activity_name: str, email: str):
     # Remove student
     activity["participants"].remove(email)
     return {"message": f"Unregistered {email} from {activity_name}"}
+
+
+@app.post("/complaints")
+def submit_complaint(complaint: ComplaintSubmission):
+    """Submit a complaint about an activity"""
+    if complaint.activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    complaint_id = str(uuid.uuid4())
+    complaints[complaint_id] = {
+        "id": complaint_id,
+        "email": complaint.email,
+        "activity_name": complaint.activity_name,
+        "message": complaint.message,
+        "status": "pending",
+        "admin_response": None,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+    return {"message": "Complaint submitted successfully", "complaint_id": complaint_id}
+
+
+@app.get("/complaints")
+def get_all_complaints():
+    """Get all complaints (admin view)"""
+    return list(complaints.values())
+
+
+@app.get("/complaints/history/{email}")
+def get_complaints_by_email(email: str):
+    """Get all complaints submitted by a specific student"""
+    user_complaints = [c for c in complaints.values() if c["email"] == email]
+    return user_complaints
+
+
+@app.put("/complaints/{complaint_id}/respond")
+def respond_to_complaint(complaint_id: str, admin_response: AdminResponse):
+    """Admin responds to a complaint"""
+    if complaint_id not in complaints:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+
+    complaints[complaint_id]["admin_response"] = admin_response.response
+    complaints[complaint_id]["status"] = "resolved"
+    return {"message": "Response submitted successfully"}
+
+
+@app.delete("/complaints/{complaint_id}")
+def delete_complaint(complaint_id: str):
+    """Admin deletes a complaint"""
+    if complaint_id not in complaints:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+
+    del complaints[complaint_id]
+    return {"message": "Complaint deleted successfully"}

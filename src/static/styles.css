@@ -192,6 +192,76 @@ button:hover {
   display: none;
 }
 
+/* Complaint and feedback styles */
+#complaint-container textarea,
+#admin-container textarea.response-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.complaint-card {
+  margin-bottom: 15px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.complaint-card.status-pending {
+  border-left: 4px solid #f0ad4e;
+}
+
+.complaint-card.status-resolved {
+  border-left: 4px solid #5cb85c;
+}
+
+.complaint-card p {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.complaint-time {
+  color: #888;
+  font-size: 12px !important;
+}
+
+.status-badge {
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.status-badge.pending {
+  color: #d68910;
+}
+
+.status-badge.resolved {
+  color: #27ae60;
+}
+
+.admin-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-actions button {
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+.delete-complaint-btn {
+  background-color: #c62828;
+}
+
+.delete-complaint-btn:hover {
+  background-color: #e53935;
+}
+
 footer {
   text-align: center;
   margin-top: 30px;

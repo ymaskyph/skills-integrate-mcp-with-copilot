@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const activitiesList = document.getElementById("activities-list");
   const activitySelect = document.getElementById("activity");
+  const complaintActivitySelect = document.getElementById("complaint-activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
@@ -54,6 +55,12 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+
+        // Also populate the complaint activity dropdown
+        const complaintOption = document.createElement("option");
+        complaintOption.value = name;
+        complaintOption.textContent = name;
+        complaintActivitySelect.appendChild(complaintOption);
       });
 
       // Add event listeners to delete buttons
@@ -157,4 +164,145 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize app
   fetchActivities();
+
+  // Handle complaint form submission
+  const complaintForm = document.getElementById("complaint-form");
+  const complaintMessageDiv = document.getElementById("complaint-message-div");
+
+  complaintForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const email = document.getElementById("complaint-email").value;
+    const activityName = document.getElementById("complaint-activity").value;
+    const message = document.getElementById("complaint-message").value;
+
+    try {
+      const response = await fetch("/complaints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, activity_name: activityName, message }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        complaintMessageDiv.textContent = result.message;
+        complaintMessageDiv.className = "success";
+        complaintForm.reset();
+      } else {
+        complaintMessageDiv.textContent = result.detail || "An error occurred";
+        complaintMessageDiv.className = "error";
+      }
+
+      complaintMessageDiv.classList.remove("hidden");
+      setTimeout(() => complaintMessageDiv.classList.add("hidden"), 5000);
+    } catch (error) {
+      complaintMessageDiv.textContent = "Failed to submit. Please try again.";
+      complaintMessageDiv.className = "error";
+      complaintMessageDiv.classList.remove("hidden");
+      console.error("Error submitting complaint:", error);
+    }
+  });
+
+  // Handle complaint history lookup
+  const historyForm = document.getElementById("history-form");
+  const historyList = document.getElementById("history-list");
+
+  historyForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const email = document.getElementById("history-email").value;
+
+    try {
+      const response = await fetch(
+        `/complaints/history/${encodeURIComponent(email)}`
+      );
+      const data = await response.json();
+
+      if (!data.length) {
+        historyList.innerHTML = "<p><em>No complaints found for this email.</em></p>";
+        return;
+      }
+
+      historyList.innerHTML = data
+        .map(
+          (c) => `
+        <div class="complaint-card status-${c.status}">
+          <p><strong>Activity:</strong> ${c.activity_name}</p>
+          <p><strong>Message:</strong> ${c.message}</p>
+          <p><strong>Status:</strong> <span class="status-badge ${c.status}">${c.status}</span></p>
+          ${c.admin_response ? `<p><strong>Admin Response:</strong> ${c.admin_response}</p>` : ""}
+          <p class="complaint-time">${new Date(c.timestamp).toLocaleString()}</p>
+        </div>`
+        )
+        .join("");
+    } catch (error) {
+      historyList.innerHTML = "<p>Failed to load history. Please try again.</p>";
+      console.error("Error fetching history:", error);
+    }
+  });
+
+  // Admin: load all complaints
+  const loadAllBtn = document.getElementById("load-all-complaints");
+  const adminList = document.getElementById("admin-complaints-list");
+
+  loadAllBtn.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/complaints");
+      const data = await response.json();
+
+      if (!data.length) {
+        adminList.innerHTML = "<p><em>No complaints submitted yet.</em></p>";
+        return;
+      }
+
+      adminList.innerHTML = data
+        .map(
+          (c) => `
+        <div class="complaint-card status-${c.status}" id="complaint-${c.id}">
+          <p><strong>From:</strong> ${c.email}</p>
+          <p><strong>Activity:</strong> ${c.activity_name}</p>
+          <p><strong>Message:</strong> ${c.message}</p>
+          <p><strong>Status:</strong> <span class="status-badge ${c.status}">${c.status}</span></p>
+          ${c.admin_response ? `<p><strong>Response:</strong> ${c.admin_response}</p>` : ""}
+          <p class="complaint-time">${new Date(c.timestamp).toLocaleString()}</p>
+          <div class="admin-actions">
+            <textarea class="response-input" placeholder="Write a response..." rows="2"></textarea>
+            <button class="respond-btn" data-id="${c.id}">Respond</button>
+            <button class="delete-complaint-btn" data-id="${c.id}">Delete</button>
+          </div>
+        </div>`
+        )
+        .join("");
+
+      // Respond buttons
+      adminList.querySelectorAll(".respond-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-id");
+          const card = document.getElementById(`complaint-${id}`);
+          const responseText = card.querySelector(".response-input").value.trim();
+          if (!responseText) return;
+
+          const res = await fetch(`/complaints/${id}/respond`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ response: responseText }),
+          });
+          if (res.ok) loadAllBtn.click();
+        });
+      });
+
+      // Delete buttons
+      adminList.querySelectorAll(".delete-complaint-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-id");
+          const res = await fetch(`/complaints/${id}`, { method: "DELETE" });
+          if (res.ok) loadAllBtn.click();
+        });
+      });
+    } catch (error) {
+      adminList.innerHTML = "<p>Failed to load complaints. Please try again.</p>";
+      console.error("Error loading complaints:", error);
+    }
+  });
 });
