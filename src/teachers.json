@@ -1,0 +1,22 @@
+{
+  "teachers": [
+    {
+      "username": "mr.smith",
+      "password_hash": "cde383eee8ee7a4400adf7a15f716f179a2eb97646b37e089eb8d6d04e663416",
+      "role": "teacher",
+      "name": "Mr. Smith"
+    },
+    {
+      "username": "ms.jones",
+      "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+      "role": "admin",
+      "name": "Ms. Jones"
+    },
+    {
+      "username": "dr.lee",
+      "password_hash": "02423ab2e61297b8262449c93e19be42fb5bbb275860a7d93b1ebdc7b6535ed7",
+      "role": "supervisor",
+      "name": "Dr. Lee"
+    }
+  ]
+}
