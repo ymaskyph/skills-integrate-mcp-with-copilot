@@ -3,6 +3,75 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const signupContainer = document.getElementById("signup-container");
+  const loginFormContainer = document.getElementById("login-form-container");
+  const userInfo = document.getElementById("user-info");
+  const userDisplay = document.getElementById("user-display");
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const loginError = document.getElementById("login-error");
+
+  // Current user state
+  let currentUser = null;
+  let authHeader = null;
+
+  // Build Basic Auth header from email and password
+  function buildAuthHeader(email, password) {
+    return "Basic " + btoa(email + ":" + password);
+  }
+
+  // Update UI based on login state
+  function updateAuthUI() {
+    if (currentUser) {
+      loginFormContainer.classList.add("hidden");
+      userInfo.classList.remove("hidden");
+      userDisplay.textContent = `${currentUser.username} (${currentUser.role})`;
+      if (currentUser.role === "teacher") {
+        signupContainer.classList.remove("hidden");
+      } else {
+        signupContainer.classList.add("hidden");
+      }
+    } else {
+      loginFormContainer.classList.remove("hidden");
+      userInfo.classList.add("hidden");
+      signupContainer.classList.add("hidden");
+    }
+    fetchActivities();
+  }
+
+  // Handle login
+  loginBtn.addEventListener("click", async () => {
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
+    if (!email || !password) return;
+
+    const header = buildAuthHeader(email, password);
+    try {
+      const response = await fetch("/me", {
+        headers: { Authorization: header },
+      });
+      if (response.ok) {
+        currentUser = await response.json();
+        authHeader = header;
+        loginError.classList.add("hidden");
+        updateAuthUI();
+      } else {
+        loginError.classList.remove("hidden");
+      }
+    } catch (error) {
+      loginError.classList.remove("hidden");
+      console.error("Login error:", error);
+    }
+  });
+
+  // Handle logout
+  logoutBtn.addEventListener("click", () => {
+    currentUser = null;
+    authHeader = null;
+    document.getElementById("login-email").value = "";
+    document.getElementById("login-password").value = "";
+    updateAuthUI();
+  });
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -12,6 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      // Reset and keep the default option
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -20,6 +91,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft =
           details.max_participants - details.participants.length;
+
+        // Show delete buttons only for teachers
+        const isTeacher = currentUser && currentUser.role === "teacher";
 
         // Create participants HTML with delete icons instead of bullet points
         const participantsHTML =
@@ -30,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      `<li><span class="participant-email">${email}</span>${isTeacher ? `<button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button>` : ""}</li>`
                   )
                   .join("")}
               </ul>
@@ -80,6 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/unregister?email=${encodeURIComponent(email)}`,
         {
           method: "DELETE",
+          headers: { Authorization: authHeader },
         }
       );
 
@@ -124,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/signup?email=${encodeURIComponent(email)}`,
         {
           method: "POST",
+          headers: { Authorization: authHeader },
         }
       );
 
@@ -156,5 +232,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Initialize app
-  fetchActivities();
+  updateAuthUI();
 });

@@ -10,6 +10,18 @@
     <header>
       <h1>Mergington High School</h1>
       <h2>Extracurricular Activities</h2>
+      <div id="auth-bar">
+        <div id="login-form-container">
+          <input type="email" id="login-email" placeholder="Email" />
+          <input type="password" id="login-password" placeholder="Password" />
+          <button id="login-btn">Login</button>
+          <span id="login-error" class="hidden login-error">Invalid credentials</span>
+        </div>
+        <div id="user-info" class="hidden">
+          <span id="user-display"></span>
+          <button id="logout-btn">Logout</button>
+        </div>
+      </div>
     </header>
 
     <main>
@@ -21,7 +33,7 @@
         </div>
       </section>
 
-      <section id="signup-container">
+      <section id="signup-container" class="hidden">
         <h3>Sign Up for an Activity</h3>
         <form id="signup-form">
           <div class="form-group">

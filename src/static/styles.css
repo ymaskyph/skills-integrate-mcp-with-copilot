@@ -28,6 +28,62 @@ header h1 {
   margin-bottom: 10px;
 }
 
+#auth-bar {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#login-form-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#login-form-container input {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: none;
+  font-size: 14px;
+}
+
+#user-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: white;
+}
+
+#user-display {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#logout-btn {
+  background-color: #c62828;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+#logout-btn:hover {
+  background-color: #ef5350;
+}
+
+#login-btn {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.login-error {
+  color: #ffcdd2;
+  font-size: 13px;
+}
+
 main {
   display: flex;
   flex-wrap: wrap;

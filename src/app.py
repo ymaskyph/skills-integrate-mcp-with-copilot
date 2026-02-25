@@ -5,7 +5,9 @@ A super simple FastAPI application that allows students to view and sign up
 for extracurricular activities at Mergington High School.
 """
 
-from fastapi import FastAPI, HTTPException
+import secrets
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import os
@@ -18,6 +20,40 @@ app = FastAPI(title="Mergington High School API",
 current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
+
+security = HTTPBasic()
+
+# User database with roles: student, teacher, supervisor
+users = {
+    "teacher@mergington.edu": {"password": "teacher123", "role": "teacher"},
+    "admin@mergington.edu": {"password": "admin123", "role": "teacher"},
+    "student@mergington.edu": {"password": "student123", "role": "student"},
+    "supervisor@mergington.edu": {"password": "super123", "role": "supervisor"},
+}
+
+
+def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
+    """Authenticate user and return their info."""
+    username = credentials.username
+    if username in users:
+        user = users[username]
+        if secrets.compare_digest(credentials.password.encode(), user["password"].encode()):
+            return {"username": username, "role": user["role"]}
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid credentials",
+        headers={"WWW-Authenticate": "Basic"},
+    )
+
+
+def require_teacher(current_user: dict = Depends(get_current_user)):
+    """Require the current user to have the teacher role."""
+    if current_user["role"] != "teacher":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can perform this action"
+        )
+    return current_user
 
 # In-memory activity database
 activities = {
@@ -83,13 +119,19 @@ def root():
     return RedirectResponse(url="/static/index.html")
 
 
+@app.get("/me")
+def get_me(current_user: dict = Depends(get_current_user)):
+    """Return the current authenticated user's info."""
+    return current_user
+
+
 @app.get("/activities")
 def get_activities():
     return activities
 
 
 @app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str):
+def signup_for_activity(activity_name: str, email: str, current_user: dict = Depends(require_teacher)):
     """Sign up a student for an activity"""
     # Validate activity exists
     if activity_name not in activities:
@@ -111,7 +153,7 @@ def signup_for_activity(activity_name: str, email: str):
 
 
 @app.delete("/activities/{activity_name}/unregister")
-def unregister_from_activity(activity_name: str, email: str):
+def unregister_from_activity(activity_name: str, email: str, current_user: dict = Depends(require_teacher)):
     """Unregister a student from an activity"""
     # Validate activity exists
     if activity_name not in activities:
