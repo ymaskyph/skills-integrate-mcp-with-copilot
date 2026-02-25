@@ -198,3 +198,38 @@ footer {
   padding: 20px;
   color: #666;
 }
+
+.activity-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.edit-activity-btn {
+  background-color: #0066cc;
+  font-size: 13px;
+  padding: 5px 10px;
+}
+
+.edit-activity-btn:hover {
+  background-color: #0052a3;
+}
+
+.delete-activity-btn {
+  background-color: #c62828;
+  font-size: 13px;
+  padding: 5px 10px;
+}
+
+.delete-activity-btn:hover {
+  background-color: #b71c1c;
+}
+
+#manage-cancel-btn {
+  background-color: #777;
+  margin-left: 8px;
+}
+
+#manage-cancel-btn:hover {
+  background-color: #555;
+}
